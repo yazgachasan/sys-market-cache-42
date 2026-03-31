@@ -1,0 +1,25 @@
+name: Update Private Market Data
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Her 10 dakikada bir çalışır
+  workflow_dispatch:
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Fetch from Sheets
+        run: |
+          # Mevcut Google Script (GAS) URL'niz otomatik eklendi
+          curl -L "https://script.google.com/macros/s/AKfycbxbIgjOazDnAmaQsKUTA6-gJUgAUgwVdBmrCsXt9a_6LVB5JgYHaXiLWyAw2QuPdxUM/exec" -o market.json
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Market Bot"
+          git config --global user.email "bot@portfolix.com"
+          git add market.json
+          git commit -m "Update market data" || exit 0
+          git push
