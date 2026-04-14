@@ -4,16 +4,22 @@ on:
     - cron: '*/15 * * * *' # Her 15 dakikada bir çalışır
   workflow_dispatch:
 
+# AYNI ANDA İKİ BOTUN ÇALIŞMASINI ENGELLER
+concurrency:
+  group: market-update-group
+  cancel-in-progress: true
+
 jobs:
   update-json:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Rebase işlemi için tüm geçmişi çekmesi daha sağlıklıdır
 
       - name: Fetch from Sheets
         run: |
-          # Mevcut Google Script (GAS) URL'niz otomatik eklendi
           curl -L "https://script.google.com/macros/s/AKfycbxbIgjOazDnAmaQsKUTA6-gJUgAUgwVdBmrCsXt9a_6LVB5JgYHaXiLWyAw2QuPdxUM/exec" -o market.json
 
       - name: Commit and Push
@@ -21,5 +27,10 @@ jobs:
           git config --global user.name "Market Bot"
           git config --global user.email "bot@portfolix.com"
           git add market.json
+          
+          # Eğer değişiklik yoksa hata vermeden bitirir
           git commit -m "Update market data" || exit 0
-          git push
+          
+          # Push yapmadan önce uzak sunucudaki güncel hali çekip kendi değişikliğini en üste ekler
+          git pull --rebase origin main
+          git push origin main
